@@ -1,6 +1,6 @@
 import { UserSession } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = 'https://ration-shop-vm5f.onrender.com/api';
 
 export function getAuthToken(): string | null {
   const session = localStorage.getItem('smart_ration_session');
