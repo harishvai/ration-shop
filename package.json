@@ -1,15 +1,16 @@
 {
-  "name": "smart-ration-system",
+  "name": "ration-shop",
   "version": "1.0.0",
-  "description": "Smart Ration — Digital Ration Shop Management System",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "install:all": "npm --prefix backend install && npm --prefix frontend install",
-    "seed": "npm --prefix backend run db:seed",
-    "build:frontend": "npm --prefix frontend run build",
-    "build:backend": "npm --prefix backend run build",
-    "build": "npm --prefix frontend run build && npm --prefix backend run build",
-    "start:backend": "npm --prefix backend run dev",
-    "start:frontend": "npm --prefix frontend run dev",
-    "start": "node backend/dist/server.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }
