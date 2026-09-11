@@ -121,13 +121,13 @@ async function startServer() {
       const checkRes = await query('SELECT COUNT(*) as count FROM ration_shops');
       if (parseInt(checkRes.rows[0].count, 10) === 0) {
         console.log('Empty database detected. Running seed...');
-        await seedDatabase();
+        console.log('Database is empty. Waiting for fresh registration data.');
       } else {
         console.log(`Database already seeded with ${checkRes.rows[0].count} ration shops.`);
       }
     } catch (e) {
       console.log('Database tables missing. Running initial migration & seed...');
-      await seedDatabase();
+      console.log('Database tables are missing. Please initialize schema before registration.');
     }
 
     app.listen(PORT, () => {
