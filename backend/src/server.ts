@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 import { getDb, query } from './db/index.js';
-import { seedDatabase } from './db/seed.js';
 import authRoutes from './routes/authRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
 import salesmanRoutes from './routes/salesmanRoutes.js';
@@ -24,7 +23,10 @@ app.use(morgan('dev'));
 // Health Check API
 app.get('/api/health', async (_req: Request, res: Response) => {
   try {
-    const shopCount = await query('SELECT COUNT(*) as count FROM ration_shops');
+    const shopCount = await query(
+      'SELECT COUNT(*) as count FROM ration_shops'
+    );
+
     res.json({
       status: 'ONLINE',
       app: 'Smart Ration API',
@@ -34,11 +36,14 @@ app.get('/api/health', async (_req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (err) {
-    res.status(500).json({ status: 'ERROR', message: (err as Error).message });
+    res.status(500).json({
+      status: 'ERROR',
+      message: (err as Error).message
+    });
   }
 });
 
-// Demo Helper API (To display interactive demo credentials in the UI)
+// Demo Helper API
 app.get('/api/demo-data', async (_req: Request, res: Response) => {
   try {
     const cards = await query(
@@ -76,7 +81,9 @@ app.get('/api/demo-data', async (_req: Request, res: Response) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    res.status(500).json({
+      error: (err as Error).message
+    });
   }
 });
 
@@ -87,59 +94,149 @@ app.use('/api/salesman', salesmanRoutes);
 app.use('/api/head', headRoutes);
 
 // Serve Frontend Static in Production if built
-const frontendDist = path.resolve(process.cwd(), '..', 'frontend', 'dist');
+const frontendDist = path.resolve(
+  process.cwd(),
+  '..',
+  'frontend',
+  'dist'
+);
+
 app.use(express.static(frontendDist));
-app.get('*', (req: Request, res: Response, next: NextFunction) => {
-  if (req.path.startsWith('/api')) {
-    next();
-    return;
-  }
-  const indexPath = path.join(frontendDist, 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      res.status(404).json({ error: 'API route not found. Frontend not yet built.' });
+
+app.get(
+  '*',
+  (req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith('/api')) {
+      next();
+      return;
     }
-  });
-});
+
+    const indexPath = path.join(
+      frontendDist,
+      'index.html'
+    );
+
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        res.status(404).json({
+          error: 'API route not found. Frontend not yet built.'
+        });
+      }
+    });
+  }
+);
 
 // Global Error Handler
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('Unhandled Application Error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error'
-  });
-});
+app.use(
+  (
+    err: any,
+    _req: Request,
+    res: Response,
+    _next: NextFunction
+  ) => {
+    console.error(
+      'Unhandled Application Error:',
+      err
+    );
+
+    res.status(err.status || 500).json({
+      error: err.message || 'Internal Server Error'
+    });
+  }
+);
 
 // Bootstrap Database and Start Server
 async function startServer() {
   try {
-    console.log('Initializing Smart Ration Database Engine...');
+    console.log(
+      'Initializing Smart Ration Database Engine...'
+    );
+
     await getDb();
+
+    // TEMPORARY DATABASE RESET
+    // This runs only when RESET_DATABASE=true
+    if (process.env.RESET_DATABASE === 'true') {
+      console.log(
+        '⚠️ RESET_DATABASE enabled. Clearing database...'
+      );
+
+      await query(`
+        TRUNCATE TABLE
+          deliveries,
+          stock_transactions,
+          payments,
+          order_items,
+          orders,
+          tokens,
+          shop_inventory,
+          ration_entitlements,
+          ration_cards,
+          shop_employees,
+          customers,
+          ration_items,
+          ration_shops,
+          users
+        RESTART IDENTITY CASCADE
+      `);
+
+      console.log(
+        '✅ DATABASE RESET COMPLETE'
+      );
+    }
 
     // Check if tables exist and are populated
     try {
-      const checkRes = await query('SELECT COUNT(*) as count FROM ration_shops');
-      if (parseInt(checkRes.rows[0].count, 10) === 0) {
-        console.log('Empty database detected. Running seed...');
-        console.log('Database is empty. Waiting for fresh registration data.');
+      const checkRes = await query(
+        'SELECT COUNT(*) as count FROM ration_shops'
+      );
+
+      const shopCount = parseInt(
+        checkRes.rows[0].count,
+        10
+      );
+
+      if (shopCount === 0) {
+        console.log(
+          'Database is empty. Waiting for fresh registration data.'
+        );
       } else {
-        console.log(`Database already seeded with ${checkRes.rows[0].count} ration shops.`);
+        console.log(
+          `Database contains ${shopCount} ration shops.`
+        );
       }
     } catch (e) {
-      console.log('Database tables missing. Running initial migration & seed...');
-      console.log('Database tables are missing. Please initialize schema before registration.');
+      console.log(
+        'Database tables are missing. Please initialize schema before registration.'
+      );
     }
 
     app.listen(PORT, () => {
-      console.log(`====================================================`);
-      console.log(`  🌾 Smart Ration Management System API Server 🌾  `);
-      console.log(`  Running on: http://localhost:${PORT}             `);
-      console.log(`  Health:     http://localhost:${PORT}/api/health  `);
-      console.log(`  Demo Data:  http://localhost:${PORT}/api/demo-data`);
-      console.log(`====================================================`);
+      console.log(
+        `====================================================`
+      );
+      console.log(
+        `  🌾 Smart Ration Management System API Server 🌾  `
+      );
+      console.log(
+        `  Running on: http://localhost:${PORT}             `
+      );
+      console.log(
+        `  Health:     http://localhost:${PORT}/api/health  `
+      );
+      console.log(
+        `  Demo Data:  http://localhost:${PORT}/api/demo-data`
+      );
+      console.log(
+        `====================================================`
+      );
     });
   } catch (error) {
-    console.error('Fatal Server Startup Error:', error);
+    console.error(
+      'Fatal Server Startup Error:',
+      error
+    );
+
     process.exit(1);
   }
 }
